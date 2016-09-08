@@ -5,10 +5,10 @@
 //---------------------------
 
 html {
-	@include breakpoint(md) {
+	@include breakpoint(sm) {
 		font-size: 112.5%;
 	}
-	font: normal 100%/1.5 'Droid Serif', Georgia, serif;
+	font: normal 100%/1.5 'Roboto', sans-serif;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 }
