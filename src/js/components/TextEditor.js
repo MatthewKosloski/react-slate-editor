@@ -60,11 +60,6 @@ export default class TextEditor extends Component {
         this.hasParent = this.hasParent.bind(this);
     }
 
-    componentDidUpdate() {
-        console.log('parent is code-block', this.hasParent('code-block'));
-        console.log('current block is pre', this.hasBlock('pre'));
-    }
-
     onChange(newState) {
         const {state} = this.state;
         this.setState({ state: newState });
@@ -104,9 +99,9 @@ export default class TextEditor extends Component {
         let transform = state.transform();
 
         switch(type) {
-            case 'unordered-list':
-            case 'ordered-list': {
-                const isListItem = this.hasBlock('list-item');
+            case UNORDERED_LIST:
+            case ORDERED_LIST: {
+                const isListItem = this.hasBlock(LIST_ITEM);
                 // checks whether the current element is inside of parent (type)
                 const parentIsList = this.hasParent(type);
 
@@ -118,33 +113,33 @@ export default class TextEditor extends Component {
                 if (isListItem && parentIsList) {
                     transform = transform
                         .setBlock(DEFAULT_NODE)
-                        .unwrapBlock('unordered-list')
-                        .unwrapBlock('ordered-list');
+                        .unwrapBlock(UNORDERED_LIST)
+                        .unwrapBlock(ORDERED_LIST);
                 } else {
                     transform = transform
-                        .setBlock('list-item')
+                        .setBlock(LIST_ITEM)
                         .wrapBlock(type);
                 }
                 break;
             }
-            case 'code-block': {
-                const isPre = this.hasBlock('pre');
+            case CODE_BLOCK: {
+                const isPre = this.hasBlock(PRE);
                 const parentisCodeBlock = this.hasParent(type);
 
                 if(isPre && parentisCodeBlock) {
                     transform = transform
                         .setBlock(DEFAULT_NODE)
-                        .unwrapBlock('code-block');
+                        .unwrapBlock(CODE_BLOCK);
                 } else {
                     transform = transform
-                        .setBlock('pre')
+                        .setBlock(PRE)
                         .wrapBlock(type);
                 }
                 break;
             }
             default: {
                 const isActive = this.hasBlock(type);
-                const isListItem = this.hasBlock('list-item');
+                const isListItem = this.hasBlock(LIST_ITEM);
                 transform = transform
                     .setBlock(isActive ? DEFAULT_NODE : type);
             }
