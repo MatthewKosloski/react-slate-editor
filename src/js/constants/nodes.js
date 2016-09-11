@@ -1,0 +1,10 @@
+export const HEADING_ONE = 'heading-one';
+export const HEADING_TWO = 'heading-two';
+export const HEADING_THREE = 'heading-three';
+export const HEADING_FOUR = 'heading-four';
+export const ORDERED_LIST = 'ordered-list';
+export const UNORDERED_LIST = 'unordered-list';
+export const LIST_ITEM = 'list-item';
+export const BLOCKQUOTE = 'blockquote';
+export const CODE_BLOCK = 'code-block';
+export const PRE = 'pre';

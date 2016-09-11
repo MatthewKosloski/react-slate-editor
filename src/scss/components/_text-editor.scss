@@ -20,6 +20,13 @@
     color: #a0a0a0;
 }
 
+.text-editor__button[data-active="false"],
+.text-editor__dropdown {
+	&:hover {
+		color: #fff;
+	}
+}
+
 .text-editor__button {
 	background: transparent;
 	width: 36px;
@@ -83,23 +90,53 @@
 	font-size: rem(16);
 	background-color: #fff;
 	color: #151515;
-	height: 350px;
-	overflow: scroll;
+	height: 425px;
+	overflow: auto;
 	cursor: text;
+	> * > * + * {
+	    margin-top: rem(16);
+	}
+	blockquote {
+		font-style: italic;
+		font-weight: 700;
+	    padding: 4px 10px;
+	    border-left: 4px solid #ccc;
+	    color: #ccc;
+	}
+	ul, 
+	ol {
+		padding-left: 45px;
+	}
+}
+
+.text-editor__code-block {
+	background-color: #333;
+    color: #fff;
+    font-size: 85%;
+    padding: 10px 15px;
 }
 
 .dropdown-controller {
 	@include breakpoint(md) {
 		@include flex(0.2);
 	}
-	@extend .flex--third;
+	@include flex(100%);
+	width: 100%;
 }
 
-.bius-controller {
+.node-controller {
 	@include breakpoint(md) {
-		@include flex(1);
+		@include flex(0.8);
+		padding-left: 50px;
 	}
-	@extend .flex--third;
+	@include breakpoint(sm) {
+		@include justify-content(space-between);
+		@include flex-direction(row);
+	}
+	@include display(flex);
+	@include flex-direction(column);
+	@include flex(100%);
+	width: 100%;
 }
 
 .text-editor__dropdown {
@@ -138,7 +175,7 @@
 		font-size: rem(13);
 		display: none;
 		width: 100%;
-		overflow: scroll;
+		overflow: auto;
 		position: absolute;
 		z-index: 1;
 		li {

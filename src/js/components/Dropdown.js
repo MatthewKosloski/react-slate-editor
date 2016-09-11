@@ -6,16 +6,15 @@ export default class Dropdown extends Component {
 	constructor(props) {
 		super(props);
 		this.mounted = true;
-		this.defaultItem = props.options[0].name;
-		this.state = { activeItem: this.defaultItem, isOpen: false };
+		this.state = { activeItem: props.schema[0].name, isOpen: false };
 		this.handleDocumentClick = this.handleDocumentClick.bind(this);
 		this.handleChange = this.handleChange.bind(this);
 		this.toggleDropdown = this.toggleDropdown.bind(this);
 	}
 
 	componentWillReceiveProps(nextProps) {
-		if(nextProps.activeBlock !== this.state.activeItem) {
-			this.setState({activeItem: nextProps.activeBlock});
+		if(nextProps.activeBlock !== undefined && nextProps.activeBlock !== this.state.activeItem) {
+			this.setState({activeItem: nextProps.activeBlock.name});
 		}
 	}
 
@@ -37,12 +36,12 @@ export default class Dropdown extends Component {
 		}
 	}
 
-	handleChange(value) {
-		const {options} = this.props;
-		this.props.onChange(value);
+	handleChange(value, name, e) {
+		const {schema} = this.props;
+		this.props.onChange(e, value);
 		this.setState({
-			activeItem: options[options.findIndex((i) => i.value === value)].name,
-			isOpen: false
+			isOpen: false,
+			activeItem: name
 		});
 	}
 
@@ -52,7 +51,7 @@ export default class Dropdown extends Component {
 	}
 
 	render() {
-		const {options} = this.props;
+		const {schema} = this.props;
 		const {activeItem, isOpen} = this.state;
 		let rootClassName = 'text-editor__dropdown';
 		if(isOpen) rootClassName += ' is-open';
@@ -60,13 +59,13 @@ export default class Dropdown extends Component {
 			<div className={rootClassName}>
 				<div onMouseDown={this.toggleDropdown}>{activeItem}</div>
 				<ul>
-					{options.map((option, i) => {
+					{schema.map((option, i) => {
 						const {name, value} = option;
 						return(
 							<li 
 								key={i} 
 								value={value}
-								onClick={this.handleChange.bind(null, value)}
+								onMouseDown={this.handleChange.bind(null, value, name)}
 								className={activeItem === name ? 'selected' : ''}>
 								{name}
 							</li>
