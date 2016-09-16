@@ -8,3 +8,4 @@ export const LIST_ITEM = 'list-item';
 export const BLOCKQUOTE = 'blockquote';
 export const CODE_BLOCK = 'code-block';
 export const PRE = 'pre';
+export const IMAGE = 'image';

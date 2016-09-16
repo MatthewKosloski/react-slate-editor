@@ -1,38 +1,21 @@
 import React, { Component } from 'react';
 import Dropdown from './Dropdown';
-import DropdownSchema from '../constants/DropdownSchema';
-
-const ToolbarButton = ({onMouseDown, isActive, icon}) => {
-	return(
-		<div className="text-editor__button" onMouseDown={onMouseDown} data-active={isActive}>
-			<span className="material-icons">{icon}</span>
-		</div>
-	);
-};
+import ToolbarButton from './ToolbarButton';
+import DropdownSchema from '../constants/DROPDOWN_SCHEMA';
 
 export default class Toolbar extends Component {
 
 	constructor() {
 		super();
-		this.handleDropdownChange = this.handleDropdownChange.bind(this);
 		this.renderMarkButton = this.renderMarkButton.bind(this);
 		this.renderBlockButton = this.renderBlockButton.bind(this);
-	}
-
-	handleDropdownChange(e, value) {
-		this.props.onDropdownChange(e, value);
 	}
 
 	renderMarkButton(type, icon) {
 		const {hasMark, setMark} = this.props;
 		const isActive = hasMark(type);
-		const onMouseDown = (e) => setMark(e, type);
 		return(
-			<ToolbarButton 
-				onMouseDown={onMouseDown}
-				isActive={isActive}
-				icon={icon}
-			/>
+			<ToolbarButton onMouseDown={(e) => setMark(e, type)} isActive={isActive} icon={icon}/>
 		);
 	}
 
@@ -44,13 +27,8 @@ export default class Toolbar extends Component {
 		} else {
 			isActive = hasParent(type);
 		}
-		const onMouseDown = (e) => setBlock(e, type);
 		return(
-			<ToolbarButton 
-				onMouseDown={onMouseDown}
-				isActive={isActive}
-				icon={icon}
-			/>
+			<ToolbarButton onMouseDown={(e) => setBlock(e, type)} isActive={isActive} icon={icon}/>
 		);
 	}
 
@@ -59,7 +37,7 @@ export default class Toolbar extends Component {
 			<div className="text-editor__toolbar">
                 <div className="text-editor__toolbar-control dropdown-controller">
                 	<Dropdown 
-	                    onChange={this.handleDropdownChange}
+	                    onChange={(e, value) => this.props.onDropdownChange(e, value)}
 	                    activeBlock={DropdownSchema.filter((option) => this.props.hasBlock(option.value))[0]}
 	                    schema={DropdownSchema}
                 	/>

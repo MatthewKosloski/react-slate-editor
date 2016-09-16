@@ -1,8 +1,13 @@
 import React, { Component } from 'react';
-import { Editor, Raw } from 'slate';
+import { Editor, Raw, Plain, Html, Void } from 'slate';
 import keycode from 'keycode';
 import initialState from '../states/blank.json';
 import Toolbar from './Toolbar';
+import Modal from './Modal';
+import DEFAULT_NODE from '../constants/DEFAULT_NODE';
+import BLOCK_TAGS from '../constants/BLOCK_TAGS';
+import MARK_TAGS from '../constants/MARK_TAGS';
+import { BOLD, ITALIC, STRIKETHROUGH, UNDERLINE } from '../constants/MARKS';
 import {
     HEADING_ONE,
     HEADING_TWO,
@@ -13,56 +18,128 @@ import {
     LIST_ITEM,
     BLOCKQUOTE,
     CODE_BLOCK,
-    PRE
-} from '../constants/nodes';
+    PRE,
+    IMAGE
+} from '../constants/BLOCKS';
 
-import {
-    BOLD,
-    ITALIC,
-    STRIKETHROUGH,
-    UNDERLINE
-} from '../constants/marks';
+function createElement(tag, props, className, isSelfClosing) {
+    const Tag = tag;
+    const cls = className || '';
+    if(isSelfClosing) {
+        return <Tag className={cls} {...props.attributes} />
+    } else {
+        return <Tag className={cls} {...props.attributes}>{props.children}</Tag>
+    }
+}
 
-const DEFAULT_NODE = 'paragraph';
+function ImageNode(props) {
+    const { node, state } = props;
+    const src = node.data.get('src');
+    return (
+        <img src={src} {...props.attributes} />
+    );
+}
+
+const rules = [
+    {
+        deserialize(el, next) {
+            const type = BLOCK_TAGS[el.tagName];
+            if (!type) return;
+            return {
+                kind: 'block',
+                type: type,
+                nodes: next(el.children)
+            }
+        },
+        serialize(object, children) {
+            if (object.kind !== 'block') return;
+            if(object.type === IMAGE) {
+                return <img src={object.data.get('src')} alt="caption_goes_here"/>;
+            } else {
+                switch (object.type) {
+                    case DEFAULT_NODE: return <p>{children}</p>
+                    case HEADING_ONE: return <h1>{children}</h1>
+                    case HEADING_TWO: return <h2>{children}</h2>
+                    case HEADING_THREE: return <h3>{children}</h3>
+                    case HEADING_FOUR: return <h4>{children}</h4>
+                    case ORDERED_LIST: return <ol>{children}</ol>
+                    case UNORDERED_LIST: return <ul>{children}</ul>
+                    case LIST_ITEM: return <li>{children}</li>
+                    case BLOCKQUOTE: return <blockquote>{children}</blockquote>
+                    case CODE_BLOCK:
+                    case PRE:
+                    return <pre>{children}</pre>
+                }
+            }
+        }
+    },
+    {
+        deserialize(el, next) {
+            const type = MARK_TAGS[el.tagName];
+            if (!type) return;
+            return {
+                kind: 'mark',
+                type: type,
+                nodes: next(el.children)
+            }
+        },
+        serialize(object, children) {
+            if (object.kind != 'mark') return;
+            switch (object.type) {
+                case BOLD: return <strong>{children}</strong>
+                case ITALIC: return <em>{children}</em>
+                case UNDERLINE: return <u>{children}</u>
+                case STRIKETHROUGH: return <del>{children}</del>
+            }
+        }
+    }
+];
+
+const html = new Html({ rules });
 const state = Raw.deserialize(initialState, { terse: true });
 const schema = { nodes: {}, marks: {} };
 const { nodes, marks } = schema;
 
-nodes[HEADING_ONE] = props => <h1 {...props.attributes}>{props.children}</h1>;
-nodes[HEADING_TWO] = props => <h2 {...props.attributes}>{props.children}</h2>;
-nodes[HEADING_THREE] = props => <h3 {...props.attributes}>{props.children}</h3>;
-nodes[HEADING_FOUR] = props => <h4 {...props.attributes}>{props.children}</h4>;
-nodes[ORDERED_LIST] = props => <ol {...props.attributes}>{props.children}</ol>;
-nodes[UNORDERED_LIST] = props => <ul {...props.attributes}>{props.children}</ul>;
-nodes[LIST_ITEM] = props => <li {...props.attributes}>{props.children}</li>;
-nodes[BLOCKQUOTE] = props => <blockquote {...props.attributes}>{props.children}</blockquote>;
-nodes[CODE_BLOCK] = props => <pre className="text-editor__code-block" {...props.attributes}><code>{props.children}</code></pre>;
-nodes[PRE] = props => <pre {...props.attributes}>{props.children}</pre>;
+nodes[HEADING_ONE] = props => createElement('h1', props, null, false);
+nodes[HEADING_TWO] = props => createElement('h2', props, null, false);
+nodes[HEADING_THREE] = props => createElement('h3', props, null, false);
+nodes[HEADING_FOUR] = props => createElement('h4', props, null, false);
+nodes[ORDERED_LIST] = props => createElement('ol', props, null, false);
+nodes[UNORDERED_LIST] = props => createElement('ul', props, null, false);
+nodes[LIST_ITEM] = props => createElement('li', props, null, false);
+nodes[BLOCKQUOTE] = props => createElement('blockquote', props, null, false);
+nodes[PRE] = props => createElement('pre', props, null, false);
+nodes[CODE_BLOCK] = props => createElement('pre', props, 'text-editor__code-block', false);
+nodes[IMAGE] = ImageNode;
 
-marks[BOLD] = props => <strong>{props.children}</strong>;
-marks[ITALIC] = props => <em>{props.children}</em>;
-marks[STRIKETHROUGH] = props => <del>{props.children}</del>;
-marks[UNDERLINE] = props => <u>{props.children}</u>;
+marks[BOLD] = props => createElement('strong', props, null, false);
+marks[ITALIC] = props => createElement('em', props, null, false);;
+marks[STRIKETHROUGH] = props => createElement('del', props, null, false);;
+marks[UNDERLINE] = props => createElement('u', props, null, false);;
 
 export default class TextEditor extends Component {
 
     constructor() {
         super()
-        this.state = { state, schema };
-        this.onChange = this.onChange.bind(this);
+        this.state = { 
+            state, 
+            schema,
+            modalIsOpen: true
+        };
         this.hasMark = this.hasMark.bind(this);
         this.hasBlock = this.hasBlock.bind(this);
         this.renderEditor = this.renderEditor.bind(this);
-        this.focus = this.focus.bind(this);
-        this.handleDropdownChange = this.handleDropdownChange.bind(this);
+        this.onDropdownChange = this.onDropdownChange.bind(this);
         this.setMark = this.setMark.bind(this);
         this.setBlock = this.setBlock.bind(this);
         this.hasParent = this.hasParent.bind(this);
+        this.onDocumentChange = this.onDocumentChange.bind(this);
+        this.renderModal = this.renderModal.bind(this);
+        this.onChange = this.onChange.bind(this);
     }
 
-    onChange(newState) {
-        const {state} = this.state;
-        this.setState({ state: newState });
+    onChange(state) {
+        this.setState({ state });
     }
 
     hasMark(type) {
@@ -73,13 +150,11 @@ export default class TextEditor extends Component {
     setMark(e, type){
         e.preventDefault();
         let { state } = this.state;
-
         state = state
             .transform()
             .toggleMark(type)
             .apply();
-
-        this.setState({ state });
+        this.onChange(state);
     }
 
     hasBlock(type) {
@@ -146,50 +221,86 @@ export default class TextEditor extends Component {
         }
 
         state = transform.apply();
-        this.setState({ state });
+        this.onChange(state);
     }
 
-    handleDropdownChange(e, type) {
+    onDropdownChange(e, type) {
         this.setBlock(e, type);
+    }
+
+    onDocumentChange(document, state) {
+        const serializedHtml = html.serialize(state);
+        this.props.onDocumentChange(serializedHtml);
     }
 
     renderToolbar() {
         return(
-            <div>
-                <Toolbar 
-                    onDropdownChange={this.handleDropdownChange}
-                    hasMark={this.hasMark}
-                    setMark={this.setMark}
-                    hasBlock={this.hasBlock}
-                    setBlock={this.setBlock}
-                    hasParent={this.hasParent}
-                />
-            </div>
+            <Toolbar 
+                onDropdownChange={this.onDropdownChange}
+                hasMark={this.hasMark}
+                setMark={this.setMark}
+                hasBlock={this.hasBlock}
+                setBlock={this.setBlock}
+                hasParent={this.hasParent}
+                renderModal={this.renderModal}
+            />
         );
-    }
-
-    focus() {
-        this.refs.editor.focus();
     }
 
     renderEditor() {
         const { state, schema } = this.state;
         return(
-            <div className="text-editor__editor" onClick={this.focus}>
+            <div className="text-editor__editor" onClick={() => this.refs.editor.focus()}>
                 <Editor
-                    placeholder={'Start typing...'}
+                    placeholder="Start typing..."
                     state={state}
                     schema={schema}
                     onChange={this.onChange}
+                    onDocumentChange={(document, state) => this.onDocumentChange(document, state)}
                     ref="editor"
                 />
             </div>
         );
     }
 
+    renderModal(title, description, placeholder) {
+        const { modalIsOpen } = this.props;
+        if(!modalIsOpen) return;
+        return (
+            <Modal
+                title={title}
+                onClose={() => {this.setState({modalIsOpen: false})}}
+                description={description}
+                placeholder={placeholder}
+                isOpen={modalIsOpen}
+            />
+        );
+    }
+
+    insertImage(state, src) {
+        return state
+            .transform()
+            .insertBlock({
+                type: IMAGE,
+                isVoid: true,
+                data: { src }
+            }).apply();
+    }
+
+    addImage(e) {
+        e.preventDefault()
+        const src = window.prompt('Enter the URL of the image:');
+        if (!src) return;
+        let { state } = this.state;
+        state = this.insertImage(state, src);
+        this.onChange(state);
+    }
+
     render() {
         return(
             <div className="text-editor">
+                <button onClick={this.addImage.bind(this)}>Add Image</button>
+                {this.renderModal()}
                 {this.renderToolbar()}
                 {this.renderEditor()}
             </div>

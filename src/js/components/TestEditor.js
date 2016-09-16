@@ -1,54 +1,65 @@
-import React, { Component } from 'react';
-import { Editor, Raw } from 'slate';
-import initialState from '../data/state.json';
-
-const DEFAULT_NODE = 'paragraph';
-
-const state = Raw.deserialize(initialState, { terse: true });
-
-function CodeNode(props) {
-  return <pre {...props.attributes}><code>{props.children}</code></pre>
-}
-
+import React, {Component} from 'react';
+import { Editor, Raw, Plain, Html, Void } from 'slate';
+import initialState from '../states/blank.json';
 
 const schema = {
-    nodes: {
-        'code-block': CodeNode
+  nodes: {
+    image: (props) => {
+      const { node, state } = props
+      const src = node.data.get('src')
+      return (
+        <img src={src} {...props.attributes} />
+      )
     }
-};
+  }
+}
 
 export default class TestEditor extends Component {
 
-    constructor() {
-        super()
-        this.state = { state, schema };
-        this.onChange = this.onChange.bind(this);
-        this.setBlock = this.setBlock.bind(this);
-    }
+	constructor() {
+		super();
+		this.state = {
+			state: Raw.deserialize(initialState, { terse: true })
+		};
+		this.onChange = this.onChange.bind(this);
+		this.insertImage = this.insertImage.bind(this);
+		this.onClickImage = this.onClickImage.bind(this);
+	}
 
-    onChange(newState) {
-        const {state} = this.state;
-        this.setState({ state: newState });
-    }
+	onChange(state) {
+		this.setState({state});
+	}
 
-    setBlock(type, e) {
-       console.log(type);
-       console.log(e.target);
-    }
+	insertImage(state, src) {
+		return state
+			.transform()
+			.insertBlock({
+				type: 'image',
+				isVoid: true,
+				data: { src }
+			})
+			.apply()
+	}
 
-    render() {
-        const {state, schema} = this.state;
-        return(
-           <div>
-                <button onMouseDown={this.setBlock.bind(null, 'code-block')}>CodeBlock</button>
-               <Editor
-                    placeholder={'Start typing...'}
-                    state={state}
-                    schema={schema}
-                    onChange={this.onChange}
-                />
-           </div>
-        );
-    }
+	onClickImage(e) {
+		e.preventDefault()
+		const src = window.prompt('Enter the URL of the image:')
+		if (!src) return
+		let { state } = this.state
+		state = this.insertImage(state, src)
+		this.onChange(state)
+	}
 
+	render() {
+		return(
+			<div>
+				<button onClick={this.onClickImage}>Add Image</button>
+				<Editor
+					schema={schema}
+					state={this.state.state}
+					onChange={this.onChange}
+		    	/>
+			</div>
+		);
+	}
 }
